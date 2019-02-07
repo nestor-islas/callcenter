@@ -286,14 +286,14 @@ class AMIEventProcess extends TuberiaProcess
                 $astman->Filter('!Event: '.$k);
 
             // Instalación de los manejadores de eventos
-            foreach (array('Newchannel', 'Dial', 'OriginateResponse', 'Join',
+            foreach (array('Newchannel', 'Dial', 'DialBegin', 'DialEnd', 'OriginateResponse', 'Join',
                 'Link', 'Hangup', 'Agentlogin', 'Agentlogoff',
                 'PeerStatus', 'QueueMemberAdded','QueueMemberRemoved','VarSet',
                 'QueueMemberStatus', 'QueueParams', 'QueueMember', 'QueueEntry',
                 'QueueStatusComplete', 'Leave', 'Reload', 'Agents', 'AgentsComplete',
                 'AgentCalled', 'AgentDump', 'AgentConnect', 'AgentComplete',
                 'QueueMemberPaused', 'ParkedCall', /*'ParkedCallTimeOut',*/
-                'ParkedCallGiveUp', 'QueueCallerAbandon', 'BridgeCreate', 'BridgeEnter', 'BridgeLeave', 'UserEvent'
+                'ParkedCallGiveUp', 'QueueCallerAbandon', 'BridgeCreate', 'BridgeEnter', 'BridgeLeave', 'UserEvent', 'QueueCallerJoin', 'QueueCallerLeave',
             ) as $k)
                 $astman->add_event_handler($k, array($this, "msg_$k"));
             $astman->add_event_handler('Bridge', array($this, "msg_Link")); // Visto en Asterisk 1.6.2.x
@@ -1704,8 +1704,12 @@ Uniqueid: 1429642067.241008
             $srcUniqueId = $params['SrcUniqueID'];
         elseif (isset($params['UniqueID']))
             $srcUniqueId = $params['UniqueID'];
+        elseif (isset($params['Uniqueid']))
+            $srcUniqueId = $params['Uniqueid'];
         if (isset($params['DestUniqueID']))
             $destUniqueID = $params['DestUniqueID'];
+        elseif (isset($params['DestUniqueid']))
+           	$destUniqueID = $params['DestUniqueid'];
 
         if (!is_null($srcUniqueId) && !is_null($destUniqueID)) {
             /* Si el SrcUniqueID es alguno de los Uniqueid monitoreados, se añade el
@@ -3086,6 +3090,58 @@ Uniqueid: 1429642067.241008
         }
 
         $this->_bridgeManager->msg_BridgeLeave($params);
+    }
+
+    public function msg_DialBegin($sEvent, $params, $sServer, $iPort)
+    {
+        if ($this->DEBUG) {
+            $this->_log->output('DEBUG: '.__METHOD__.
+                "\nretraso => ".(microtime(TRUE) - $params['local_timestamp_received']).
+                "\n$sEvent: => ".print_r($params, TRUE)
+                );
+        }
+
+        $params['SubEvent'] = 'Begin';
+
+        $this->msg_Dial($sEvent, $params, $sServer, $iPort);
+    }
+
+    public function msg_DialEnd($sEvent, $params, $sServer, $iPort)
+    {
+        if ($this->DEBUG) {
+            $this->_log->output('DEBUG: '.__METHOD__.
+                "\nretraso => ".(microtime(TRUE) - $params['local_timestamp_received']).
+                "\n$sEvent: => ".print_r($params, TRUE)
+                );
+        }
+
+        $params['SubEvent'] = 'End';
+
+        $this->msg_Dial($sEvent, $params, $sServer, $iPort);
+    }
+
+    public function msg_QueueCallerJoin($sEvent, $params, $sServer, $iPort)
+    {
+        if ($this->DEBUG) {
+            $this->_log->output('DEBUG: '.__METHOD__.
+                "\nretraso => ".(microtime(TRUE) - $params['local_timestamp_received']).
+                "\n$sEvent: => ".print_r($params, TRUE)
+                );
+        }
+
+        $this->msg_Join($sEvent, $params, $sServer, $iPort);
+    }
+
+    public function msg_QueueCallerLeave($sEvent, $params, $sServer, $iPort)
+    {
+        if ($this->DEBUG) {
+            $this->_log->output('DEBUG: '.__METHOD__.
+                "\nretraso => ".(microtime(TRUE) - $params['local_timestamp_received']).
+                "\n$sEvent: => ".print_r($params, TRUE)
+                );
+        }
+
+        $this->msg_Leave($sEvent, $params, $sServer, $iPort);
     }
 }
 ?>
