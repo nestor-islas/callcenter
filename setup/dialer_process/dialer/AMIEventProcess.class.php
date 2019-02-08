@@ -1726,6 +1726,7 @@ Uniqueid: 1429642067.241008
                     $this->_log->output("DEBUG: ".__METHOD__.": encontrado canal auxiliar para llamada: {$llamada->actionid}");
                 }
 
+                $params['Destination'] = isset($params['Destination'])?$params['Destination']:$params['DestChannel'];
                 if (strpos($params['Destination'], 'Local/') !== 0) {
                     if (is_null($llamada->actualchannel)) {
                         // Primer Dial observado, se asigna directamente
